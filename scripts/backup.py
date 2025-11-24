@@ -39,25 +39,36 @@ class cd:
 log = None
 
 # --------------------------------------------------------------------------
+# R U N   S C R I P T
+# --------------------------------------------------------------------------
+def run_script(src, script):
+    if script:
+        with cd(src):
+            log.info("Running pre-script %s", script)
+            subprocess.check_call([script])
+
+
+# --------------------------------------------------------------------------
 # M A K E   B A C K U P
 # --------------------------------------------------------------------------
-def make_backup(archive,root,repo,src):
+def make_backup(archive, root, repo, src):
     with cd(src):
-        log.info("Creating %s::%s",repo,archive)
-        repopath = os.path.join(root,repo)
-        cmd = ["borg","create","-x","--show-rc",repopath + "::" + archive,"."]
-        log.debug("Calling '%s'",str(cmd))
+        log.info("Creating %s::%s", repo, archive)
+        repopath = os.path.join(root, repo)
+        cmd = ["borg", "create", "-x", "--show-rc",
+               repopath + "::" + archive, "."]
+        log.debug("Calling '%s'", str(cmd))
         subprocess.check_call(cmd)
 
 
 # --------------------------------------------------------------------------
 # P R U N E   R E P O
 # --------------------------------------------------------------------------
-def prune_repo(root,repo,prune_args):
-    cmd = ["borg","prune","--show-rc",]
+def prune_repo(root, repo, prune_args):
+    cmd = ["borg", "prune", "--show-rc", ]
     cmd.extend(prune_args.split())
-    cmd.append(os.path.join(root,repo))
-    log.debug("Calling '%s'",str(cmd))
+    cmd.append(os.path.join(root, repo))
+    log.debug("Calling '%s'", str(cmd))
     subprocess.check_call(cmd)
 
 
@@ -66,7 +77,7 @@ def prune_repo(root,repo,prune_args):
 # --------------------------------------------------------------------------
 
 # Set the logging up
-formatter = logging.Formatter("%(asctime)s %(levelname)s %(message)s","%T")
+formatter = logging.Formatter("%(asctime)s %(levelname)s %(message)s", "%T")
 hdlr = logging.StreamHandler(sys.stderr)
 hdlr.setFormatter(formatter)
 log = logging.getLogger("backup.py")
@@ -99,23 +110,28 @@ if user != getpass.getuser():
 
 for r in config["global"]["repos"].split():
     try:
+        pre_script = None
+        if "pre_script" in config[r]:
+            pre_script = config[r]["pre_script"]
         repos.append({
             "name" : r,
             "src"  : config[r]["src"],
+            "pre_script"  : pre_script,
             })
-    except (configparser.NoSectionError,configparser.NoOptionError) as e:
-        print(e,file=sys.stderr)
+    except (configparser.NoSectionError, configparser.NoOptionError) as e:
+        print(e, file=sys.stderr)
 
 if not repos:
     raise RuntimeError("No actual repos were found to back up!")
 
-log.info("Found %d repos to back up",len(repos))
+log.info("Found %d repos to back up", len(repos))
 archive_name = time.strftime("%Y-%m-%d")
 status=0
 for r in repos:
     try:
-        make_backup(archive_name,repo_root,r["name"],r["src"])
-        prune_repo(repo_root,r["name"],prune_args)
+        run_script(r["src"], r["pre_script"])
+        make_backup(archive_name, repo_root, r["name"], r["src"])
+        prune_repo(repo_root, r["name"], prune_args)
 
     except subprocess.CalledProcessError as e:
         if status == 0: status = e.returncode
@@ -123,5 +139,5 @@ for r in repos:
         log.error(str(e))
         if status == 0: status = e.errno
 
-log.info("Finish backup, status=%d",status)
+log.info("Finish backup, status=%d", status)
 sys.exit(status)
