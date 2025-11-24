@@ -16,7 +16,7 @@
 
 import configparser
 from email.mime.text import MIMEText
-import email
+from email.utils import formatdate
 import os
 import socket
 import sys
@@ -36,7 +36,7 @@ msg['Subject'] = socket.gethostname() + ": Test message"
 msg['From'] = config['smtp']['mailfrom']
 msg['To'] = config['smtp']['mailto']
 if 'add_date' in config['smtp'] and config['smtp']['add_date']:
-    msg['Date'] = email.utils.formatdate(localtime=True)
+    msg['Date'] = formatdate(localtime=True)
 
 # Send the message via the SMTP server
 s = smtplib.SMTP(config['smtp']['mailhost'])
