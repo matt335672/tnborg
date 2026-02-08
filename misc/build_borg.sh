@@ -17,7 +17,7 @@
 set -e
 
 # General parameters
-BORG_VERSION=1.4.2    ; # Borg version to build
+BORG_VERSION=1.4.3    ; # Borg version to build
 BOX=bookworm          ; # Debian version to use
 PROVIDER=libvirt      ; # Vagrant box provider
 

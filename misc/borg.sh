@@ -17,7 +17,7 @@
 # Script to use as ~tnborg/bin/borg to chain to the required
 # borg executable.
 #
-# We can't use a soft-link for this on TrueNAS 25.04, as a bug in
+# We can't use a soft-link for this on TrueNAS 25.04/25.10, as a bug in
 # sudo results in this message when running borg in a sudo session:-
 #
 # sudo: argv[0] mismatch, expected "/path/to/borg.exe", got "borg"
