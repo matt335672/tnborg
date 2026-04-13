@@ -8,6 +8,10 @@ repositories can contain a number of archives, allowing historical data
 access. The encrypted Borg repositories are replicated on a cloud
 backup platform for disaster recovery.
 
+The software also supports backing up 'volumes' which are not encrypted.
+This allows for backing up large quantities of data which do not need
+encryption (e.g. most multimedia)
+
 Splitting the NAS data into separate repositories in this way allows for
 selective cloud backup, and also for staged recovery.
 
