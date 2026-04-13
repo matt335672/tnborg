@@ -26,15 +26,20 @@ import time
 log = None
 
 # --------------------------------------------------------------------------
+# S Y N C   V O L U M E
+# --------------------------------------------------------------------------
+def sync_volume(vol_src, vol):
+    bucket_name = vol + "-backup-vocalistic-com"
+    cmd = ["rclone","sync", vol_src, remote + ":" + bucket_name, "--fast-list"]
+    log.debug("Calling '%s'",str(cmd))
+    subprocess.check_call(cmd)
+
+# --------------------------------------------------------------------------
 # S Y N C   R E P O
 # --------------------------------------------------------------------------
 def sync_repo(root, remote, repo):
     repopath=os.path.join(root,repo)
-    bucket_name = repo + "-backup-vocalistic-com"
-    cmd = ["rclone","sync",repopath,remote + ":" + bucket_name, "--fast-list"]
-    log.debug("Calling '%s'",str(cmd))
-    subprocess.check_call(cmd)
-
+    sync_volume(repopath, repo)
 
 
 # --------------------------------------------------------------------------
@@ -72,11 +77,12 @@ for var in creds[env_key]:
     #print("Setting " + var.upper() + " to " + creds[env_key][var])
     os.environ[var.upper()] = creds[env_key][var]
 
-# Read the repos
+# Read the repos and volumes
 repos = []
 config.read(os.path.join(dir,"config.ini"))
 repo_root=config["global"]["root"]
 repos=config["global"]["repos"].split()
+volumes=config["global"]["volumes"].split()
 user=config["global"]["user"]
 if user != getpass.getuser():
     raise RuntimeError("Script needs to be run as " + user)
@@ -86,6 +92,19 @@ status = 0
 for r in repos:
     try:
         sync_repo(repo_root, remote, r)
+
+    except subprocess.CalledProcessError as e:
+        if status == 0: status = e.returncode
+    except OSError as e:
+        log.error(str(e))
+        if status == 0: status = e.errno
+
+log.info("Found %d volumes to sync",len(volumes))
+status = 0
+for vol in volumes:
+    try:
+        src = config[vol]["src"]
+        sync_volume(src, vol)
 
     except subprocess.CalledProcessError as e:
         if status == 0: status = e.returncode
